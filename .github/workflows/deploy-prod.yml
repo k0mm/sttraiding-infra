@@ -177,24 +177,25 @@ jobs:
           DEPLOYSSH
 
       - name: Debug hermes
+        continue-on-error: true
         env:
           SERVER: ${{ secrets.DEPLOY_USER }}@${{ secrets.SERVER_HOST }}
           SSH_OPTS: -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no
         run: |
           ssh $SSH_OPTS "$SERVER" bash << 'DBGSSH'
-            echo "=== hermes containers ==="
-            docker ps -a --filter label=com.docker.compose.service=hermes
-            HERMES_ID=$(docker ps -q --filter label=com.docker.compose.service=hermes | head -1)
-            echo "=== hermes networks ==="
-            [ -n "$HERMES_ID" ] && docker inspect "$HERMES_ID" \
-              | python3 -c 'import sys,json; d=json.load(sys.stdin)[0]; [print(k, v["IPAddress"]) for k,v in d["NetworkSettings"]["Networks"].items()]' \
-              || echo "container not found"
+            echo "=== hermes container ==="
+            docker ps -a --filter label=com.docker.compose.service=hermes || true
+            HERMES_ID=$(docker ps -q --filter label=com.docker.compose.service=hermes 2>/dev/null | head -1 || true)
+            echo "=== hermes inspect ==="
+            if [ -n "$HERMES_ID" ]; then
+              docker inspect "$HERMES_ID" 2>/dev/null | grep -E '"IPAddress"|"Networks"|"Name"' | head -20 || true
+            fi
             echo "=== traefik-public members ==="
-            docker network inspect traefik-public \
-              | python3 -c 'import sys,json; d=json.load(sys.stdin)[0]; [print(v["Name"]) for v in d["Containers"].values()]' \
-              2>/dev/null || echo "network not found"
+            docker network inspect traefik-public 2>/dev/null | grep '"Name"' | head -20 || true
             echo "=== hermes logs (last 20) ==="
-            [ -n "$HERMES_ID" ] && docker logs "$HERMES_ID" --tail=20 2>&1 || echo "no container"
+            if [ -n "$HERMES_ID" ]; then
+              docker logs "$HERMES_ID" --tail=20 2>&1 || true
+            fi
           DBGSSH
 
       - name: Run smoke tests
