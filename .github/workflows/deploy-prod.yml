@@ -116,7 +116,8 @@ jobs:
             echo "DOMAIN=$DOMAIN" > infrastructure/syncthing/.env
 
             { echo "DOMAIN=$DOMAIN"; echo "DEEPSEEK_API_KEY=$DEEPSEEK_KEY"; \
-              echo "OPENROUTER_API_KEY=$OPENROUTER_KEY"; } \
+              echo "OPENROUTER_API_KEY=$OPENROUTER_KEY"; \
+              echo "TELEGRAM_BOT_TOKEN=$TG_TOKEN"; echo "TELEGRAM_CHAT_ID=$TG_CHAT"; } \
               > infrastructure/hermes/.env
 
             echo "DOMAIN=$DOMAIN" > infrastructure/netdata/.env
