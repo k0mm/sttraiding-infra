@@ -17,7 +17,7 @@ if git diff --cached --name-only | grep -qE '(^|/)\\.env$'; then
 fi
 
 # 2. Нет секретов (простая эвристика)
-if git diff --cached | grep -qiE '(password|secret|token|private_key)\s*=\s*[^<$\s]{8,}'; then
+if git diff --cached | grep -qiE '(password|secret|token|private_key)[[:space:]]*=[[:space:]]*[^<$[:space:]]{8,}'; then
   echo "❌ BLOCKED: Возможный секрет в коммите. Проверь изменения."
   exit 1
 fi

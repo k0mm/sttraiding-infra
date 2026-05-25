@@ -1,0 +1,44 @@
+services:
+  backup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sttraiding-backup:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - RESTIC_REPOSITORY=/restic-cache
+      - RESTIC_PASSWORD=${RESTIC_PASSWORD:-}
+      - HTTP_PROXY=socks5://xray:1080
+      - HTTPS_PROXY=socks5://xray:1080
+      - NO_PROXY=localhost
+      - TZ=Europe/Moscow
+    volumes:
+      - obsidian-vault:/backup/obsidian:ro
+      - syncthing-config:/backup/syncthing:ro
+      - authelia-data:/backup/authelia:ro
+      - restic-cache:/restic-cache
+      - ./rclone.conf:/backup/rclone.conf:ro
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  obsidian-vault:
+    external: true
+    name: obsidian-vault
+  syncthing-config:
+    external: true
+    name: syncthing-config
+  authelia-data:
+    external: true
+    name: authelia-data
+  restic-cache:
+    name: restic-cache
+
+networks:
+  internal:
+    external: true

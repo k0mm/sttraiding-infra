@@ -1,0 +1,6 @@
+[yandex]
+type = webdav
+url = https://webdav.yandex.ru
+vendor = yandex
+user = YOUR_YANDEX_LOGIN
+pass = YOUR_YANDEX_APP_PASSWORD
