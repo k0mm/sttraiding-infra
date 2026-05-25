@@ -15,6 +15,8 @@ services:
       - HTTPS_PROXY=socks5://xray:1080
       - NO_PROXY=localhost,127.0.0.1,docker-proxy,authelia,syncthing
       - TZ=Europe/Moscow
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
     volumes:
       - obsidian-vault:/vault
     networks:

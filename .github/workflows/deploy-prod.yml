@@ -75,7 +75,8 @@ jobs:
           AUTHELIA_SESSION='${{ secrets.AUTHELIA_SESSION_SECRET }}'
           AUTHELIA_STORAGE_ENC='${{ secrets.AUTHELIA_STORAGE_ENCRYPTION_KEY }}'
           REDIS_PASS='${{ secrets.REDIS_PASSWORD }}'
-          ANTHROPIC_KEY='${{ secrets.ANTHROPIC_API_KEY }}'
+          DEEPSEEK_KEY='${{ secrets.DEEPSEEK_API_KEY }}'
+          OPENROUTER_KEY='${{ secrets.OPENROUTER_API_KEY }}'
           XRAY_B64='${{ secrets.XRAY_CONFIG_B64 }}'
           RESTIC_PASS='${{ secrets.RESTIC_PASSWORD }}'
           YANDEX_USER='${{ secrets.YANDEX_WEBDAV_USER }}'
@@ -91,7 +92,8 @@ jobs:
             AUTHELIA_SESSION="$AUTHELIA_SESSION" \
             AUTHELIA_STORAGE_ENC="$AUTHELIA_STORAGE_ENC" \
             REDIS_PASS="$REDIS_PASS" \
-            ANTHROPIC_KEY="$ANTHROPIC_KEY" \
+            DEEPSEEK_KEY="$DEEPSEEK_KEY" \
+            OPENROUTER_KEY="$OPENROUTER_KEY" \
             XRAY_B64="$XRAY_B64" \
             RESTIC_PASS="$RESTIC_PASS" \
             YANDEX_USER="$YANDEX_USER" \
@@ -113,7 +115,8 @@ jobs:
 
             echo "DOMAIN=$DOMAIN" > infrastructure/syncthing/.env
 
-            { echo "DOMAIN=$DOMAIN"; echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY"; } \
+            { echo "DOMAIN=$DOMAIN"; echo "DEEPSEEK_API_KEY=$DEEPSEEK_KEY"; \
+              echo "OPENROUTER_API_KEY=$OPENROUTER_KEY"; } \
               > infrastructure/hermes/.env
 
             echo "DOMAIN=$DOMAIN" > infrastructure/netdata/.env
