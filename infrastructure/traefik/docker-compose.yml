@@ -8,6 +8,7 @@ services:
     environment:
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-}
       - DOMAIN=${DOMAIN:-sttraiding.ru}
+      - DOCKER_API_VERSION=1.47
     ports:
       - "80:80"
       - "443:443"
