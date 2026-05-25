@@ -63,45 +63,56 @@ jobs:
             --exclude '.env' \
             ./ "$SERVER:/opt/sttraiding/"
 
-          ssh $SSH_OPTS "$SERVER" bash << 'ENVSSH'
+          LETSENCRYPT_EMAIL='${{ secrets.LETSENCRYPT_EMAIL }}'
+          DOMAIN='${{ secrets.DOMAIN }}'
+          AUTHELIA_JWT='${{ secrets.AUTHELIA_JWT_SECRET }}'
+          AUTHELIA_SESSION='${{ secrets.AUTHELIA_SESSION_SECRET }}'
+          REDIS_PASS='${{ secrets.REDIS_PASSWORD }}'
+          ANTHROPIC_KEY='${{ secrets.ANTHROPIC_API_KEY }}'
+          XRAY_B64='${{ secrets.XRAY_CONFIG_B64 }}'
+          RESTIC_PASS='${{ secrets.RESTIC_PASSWORD }}'
+          YANDEX_USER='${{ secrets.YANDEX_WEBDAV_USER }}'
+          YANDEX_PASS='${{ secrets.YANDEX_WEBDAV_PASS }}'
+          TG_TOKEN='${{ secrets.TELEGRAM_BOT_TOKEN }}'
+          TG_CHAT='${{ secrets.TELEGRAM_CHAT_ID }}'
+
+          ssh $SSH_OPTS "$SERVER" \
+            LETSENCRYPT_EMAIL="$LETSENCRYPT_EMAIL" \
+            DOMAIN="$DOMAIN" \
+            AUTHELIA_JWT="$AUTHELIA_JWT" \
+            AUTHELIA_SESSION="$AUTHELIA_SESSION" \
+            REDIS_PASS="$REDIS_PASS" \
+            ANTHROPIC_KEY="$ANTHROPIC_KEY" \
+            XRAY_B64="$XRAY_B64" \
+            RESTIC_PASS="$RESTIC_PASS" \
+            YANDEX_USER="$YANDEX_USER" \
+            YANDEX_PASS="$YANDEX_PASS" \
+            TG_TOKEN="$TG_TOKEN" \
+            TG_CHAT="$TG_CHAT" \
+            bash -s << 'ENVSSH'
             set -euo pipefail
             cd /opt/sttraiding
 
-            cat > infrastructure/traefik/.env << EOF
-LETSENCRYPT_EMAIL=${{ secrets.LETSENCRYPT_EMAIL }}
-DOMAIN=${{ secrets.DOMAIN }}
-EOF
+            { echo "LETSENCRYPT_EMAIL=$LETSENCRYPT_EMAIL"; echo "DOMAIN=$DOMAIN"; } \
+              > infrastructure/traefik/.env
 
-            cat > infrastructure/authelia/.env << EOF
-JWT_SECRET=${{ secrets.AUTHELIA_JWT_SECRET }}
-SESSION_SECRET=${{ secrets.AUTHELIA_SESSION_SECRET }}
-REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-DOMAIN=${{ secrets.DOMAIN }}
-EOF
+            { echo "JWT_SECRET=$AUTHELIA_JWT"; echo "SESSION_SECRET=$AUTHELIA_SESSION"; \
+              echo "REDIS_PASSWORD=$REDIS_PASS"; echo "DOMAIN=$DOMAIN"; } \
+              > infrastructure/authelia/.env
 
-            cat > infrastructure/syncthing/.env << EOF
-DOMAIN=${{ secrets.DOMAIN }}
-EOF
+            echo "DOMAIN=$DOMAIN" > infrastructure/syncthing/.env
 
-            cat > infrastructure/hermes/.env << EOF
-DOMAIN=${{ secrets.DOMAIN }}
-ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
-EOF
+            { echo "DOMAIN=$DOMAIN"; echo "ANTHROPIC_API_KEY=$ANTHROPIC_KEY"; } \
+              > infrastructure/hermes/.env
 
-            cat > infrastructure/netdata/.env << EOF
-DOMAIN=${{ secrets.DOMAIN }}
-EOF
+            echo "DOMAIN=$DOMAIN" > infrastructure/netdata/.env
 
-            echo '${{ secrets.XRAY_CONFIG_B64 }}' | base64 -d \
-              > infrastructure/xray/config.json
+            printf '%s' "$XRAY_B64" | base64 -d > infrastructure/xray/config.json
 
-            cat > infrastructure/backup/.env << EOF
-RESTIC_PASSWORD=${{ secrets.RESTIC_PASSWORD }}
-YANDEX_USER=${{ secrets.YANDEX_WEBDAV_USER }}
-YANDEX_PASS=${{ secrets.YANDEX_WEBDAV_PASS }}
-TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
-TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
-EOF
+            { echo "RESTIC_PASSWORD=$RESTIC_PASS"; echo "YANDEX_USER=$YANDEX_USER"; \
+              echo "YANDEX_PASS=$YANDEX_PASS"; echo "TELEGRAM_BOT_TOKEN=$TG_TOKEN"; \
+              echo "TELEGRAM_CHAT_ID=$TG_CHAT"; } \
+              > infrastructure/backup/.env
           ENVSSH
 
           ssh $SSH_OPTS "$SERVER" bash << 'DEPLOYSSH'
