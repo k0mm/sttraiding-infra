@@ -1,0 +1,74 @@
+services:
+  authelia:
+    image: authelia/authelia:4.38.9
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - AUTHELIA_JWT_SECRET=${JWT_SECRET:-}
+      - AUTHELIA_SESSION_SECRET=${SESSION_SECRET:-}
+      - AUTHELIA_SESSION_REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      - AUTHELIA_NOTIFIER_FILESYSTEM_FILENAME=/config/notification.txt
+      - AUTHELIA_STORAGE_LOCAL_PATH=/config/db.sqlite3
+      - TZ=Europe/Moscow
+    volumes:
+      - ./configuration.yml:/config/configuration.yml:ro
+      - authelia-data:/config
+    networks:
+      - traefik-public
+      - internal
+    depends_on:
+      redis:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9091/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.authelia.rule=Host(`auth.${DOMAIN:-sttraiding.ru}`)"
+      - "traefik.http.routers.authelia.entrypoints=websecure"
+      - "traefik.http.routers.authelia.tls=true"
+      - "traefik.http.routers.authelia.tls.certresolver=letsencrypt"
+      - "traefik.http.services.authelia.loadbalancer.server.port=9091"
+
+  redis:
+    image: redis:7.2.8-alpine
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-}
+      --save 60 1
+      --loglevel warning
+    volumes:
+      - redis-data:/data
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-}", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  authelia-data:
+    name: authelia-data
+  redis-data:
+    name: redis-data
+
+networks:
+  traefik-public:
+    external: true
+  internal:
+    external: true

@@ -1,0 +1,10 @@
+---
+# users_database.yml — НЕ КОММИТИТСЯ, только этот example
+# Генерировать хэш: docker run --rm authelia/authelia:4.38.9 authelia crypto hash generate argon2 --password 'yourpassword'
+users:
+  admin:
+    displayname: "Admin"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$REPLACE_WITH_GENERATED_HASH"
+    email: admin@sttraiding.ru
+    groups:
+      - admins
