@@ -1,5 +1,5 @@
 services:
-  hermes-gateway:
+  hermes:
     image: nousresearch/hermes-agent:main
     restart: unless-stopped
     command: gateway
