@@ -28,6 +28,7 @@ entryPoints:
 
 providers:
   docker:
+    endpoint: "http://docker-api-proxy:2375"
     exposedByDefault: false
     network: traefik-public
   file:

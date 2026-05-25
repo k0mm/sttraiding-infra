@@ -1,6 +1,19 @@
 services:
+  docker-api-proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./nginx-docker-proxy.conf:/etc/nginx/conf.d/docker.conf:ro
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
   traefik:
     image: traefik:v3.3
+    depends_on:
+      - docker-api-proxy
     restart: unless-stopped
     env_file:
       - path: .env
@@ -8,12 +21,10 @@ services:
     environment:
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-}
       - DOMAIN=${DOMAIN:-sttraiding.ru}
-      - DOCKER_API_VERSION=1.47
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/etc/traefik/traefik.yml:ro
       - ./dynamic:/etc/traefik/dynamic:ro
       - traefik-certs:/etc/traefik/acme

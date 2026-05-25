@@ -11,7 +11,7 @@ DOMAIN="${DOMAIN:-sttraiding.ru}"
 check_https() {
   local name="$1" url="$2"
   local status
-  status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url")
+  status=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null) || status="000"
   if [ "$status" -ge 200 ] && [ "$status" -lt 500 ]; then
     echo "  PASS: $name reachable (status=$status)"
     PASS=$((PASS + 1))
