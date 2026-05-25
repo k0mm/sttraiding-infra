@@ -16,7 +16,7 @@ services:
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8384/rest/system/ping"]
+      test: ["CMD-SHELL", "wget -qO- --server-response http://localhost:8384/rest/system/ping 2>&1 | grep -q 'HTTP/'"]
       interval: 30s
       timeout: 5s
       retries: 3
