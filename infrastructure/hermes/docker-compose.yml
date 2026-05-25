@@ -1,82 +1,51 @@
 services:
-  hermes:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: hermes:latest
+  hermes-gateway:
+    image: nousresearch/hermes-agent:main
     restart: unless-stopped
+    command: gateway
     env_file:
       - path: .env
         required: false
     environment:
-      - OBSIDIAN_VAULT=/vault
-      - DOCKER_HOST=tcp://docker-proxy:2375
-      - HTTP_PROXY=socks5://xray:1080
-      - HTTPS_PROXY=socks5://xray:1080
-      - NO_PROXY=localhost,127.0.0.1,docker-proxy,authelia,syncthing
-      - TZ=Europe/Moscow
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY:-}
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
-      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+      - HERMES_HOME=/opt/data
+      - HERMES_DASHBOARD=1
+      - HERMES_DASHBOARD_HOST=0.0.0.0
+      - API_SERVER_ENABLED=true
+      - API_SERVER_HOST=0.0.0.0
     volumes:
-      - obsidian-vault:/vault
+      - hermes-data:/opt/data
     networks:
       - traefik-public
       - internal
-      - hermes-net
-    depends_on:
-      docker-proxy:
-        condition: service_healthy
     security_opt:
       - no-new-privileges:true
     healthcheck:
-      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      test: ["CMD", "curl", "-sf", "http://localhost:9119/"]
       interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.hermes.rule=Host(`hermes.${DOMAIN:-sttraiding.ru}`)"
-      - "traefik.http.routers.hermes.entrypoints=websecure"
-      - "traefik.http.routers.hermes.tls=true"
-      - "traefik.http.routers.hermes.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.hermes.middlewares=authelia@file,secure-headers@file"
-      - "traefik.http.services.hermes.loadbalancer.server.port=8080"
-
-  docker-proxy:
-    image: tecnativa/docker-socket-proxy:0.3.0
-    restart: unless-stopped
-    environment:
-      - CONTAINERS=1
-      - IMAGES=1
-      - INFO=1
-      - NETWORKS=1
-      - SERVICES=1
-      - TASKS=1
-      - POST=1
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - hermes-net
-    security_opt:
-      - no-new-privileges:true
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:2375/version"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      - "traefik.http.routers.hermes-dash.rule=Host(`hermes.${DOMAIN:-sttraiding.ru}`)"
+      - "traefik.http.routers.hermes-dash.entrypoints=websecure"
+      - "traefik.http.routers.hermes-dash.tls=true"
+      - "traefik.http.routers.hermes-dash.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.hermes-dash.middlewares=authelia@file,secure-headers@file"
+      - "traefik.http.services.hermes-dash.loadbalancer.server.port=9119"
+      - "traefik.http.routers.hermes-api.rule=Host(`hermes-api.${DOMAIN:-sttraiding.ru}`)"
+      - "traefik.http.routers.hermes-api.entrypoints=websecure"
+      - "traefik.http.routers.hermes-api.tls=true"
+      - "traefik.http.routers.hermes-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.hermes-api.middlewares=authelia@file,secure-headers@file"
+      - "traefik.http.services.hermes-api.loadbalancer.server.port=8642"
 
 volumes:
-  obsidian-vault:
-    external: true
-    name: obsidian-vault
+  hermes-data:
+    name: hermes-data
 
 networks:
   traefik-public:
     external: true
   internal:
-    external: true
-  hermes-net:
     external: true
