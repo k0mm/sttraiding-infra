@@ -128,9 +128,9 @@ jobs:
               local svc=$1
               echo "Deploying: $svc"
               docker compose -f "infrastructure/${svc}/docker-compose.yml" \
-                pull --quiet
+                pull --ignore-buildable --quiet
               docker compose -f "infrastructure/${svc}/docker-compose.yml" \
-                up -d --remove-orphans
+                up -d --build --remove-orphans
             }
 
             git rev-parse HEAD > .last-deploy 2>/dev/null || true
