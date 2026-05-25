@@ -1,0 +1,78 @@
+services:
+  hermes:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: hermes:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - OBSIDIAN_VAULT=/vault
+      - DOCKER_HOST=tcp://docker-proxy:2375
+      - HTTP_PROXY=socks5://xray:1080
+      - HTTPS_PROXY=socks5://xray:1080
+      - NO_PROXY=localhost,127.0.0.1,docker-proxy,authelia,syncthing
+      - TZ=Europe/Moscow
+    volumes:
+      - obsidian-vault:/vault
+    networks:
+      - traefik-public
+      - internal
+      - hermes-net
+    depends_on:
+      docker-proxy:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hermes.rule=Host(`hermes.${DOMAIN:-sttraiding.ru}`)"
+      - "traefik.http.routers.hermes.entrypoints=websecure"
+      - "traefik.http.routers.hermes.tls=true"
+      - "traefik.http.routers.hermes.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.hermes.middlewares=authelia@file,secure-headers@file"
+      - "traefik.http.services.hermes.loadbalancer.server.port=8080"
+
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:0.3.0
+    restart: unless-stopped
+    environment:
+      - CONTAINERS=1
+      - IMAGES=1
+      - INFO=1
+      - NETWORKS=1
+      - SERVICES=1
+      - TASKS=1
+      - POST=1
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - hermes-net
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:2375/version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  obsidian-vault:
+    external: true
+    name: obsidian-vault
+
+networks:
+  traefik-public:
+    external: true
+  internal:
+    external: true
+  hermes-net:
+    external: true
