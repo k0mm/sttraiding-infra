@@ -3,7 +3,7 @@ services:
     image: nginx:alpine
     restart: unless-stopped
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./nginx-docker-proxy.conf:/etc/nginx/conf.d/docker.conf:ro
     networks:
       - internal

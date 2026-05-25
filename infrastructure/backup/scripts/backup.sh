@@ -39,7 +39,6 @@ case "$TARGET" in
     run_backup "obsidian"  /backup/obsidian
     run_backup "syncthing" /backup/syncthing
     run_backup "authelia"  /backup/authelia
-    run_backup "volumes"   /backup/volumes
     notify "✅" "full backup complete"
     ;;
   *)

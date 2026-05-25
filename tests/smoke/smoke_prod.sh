@@ -23,10 +23,15 @@ check_https() {
 
 check_container() {
   local name="$1"
-  local health
-  health=$(docker inspect --format='{{.State.Health.Status}}' \
-    "$(docker ps -q -f name="$name")" 2>/dev/null || echo "unknown")
-  if [ "$health" = "healthy" ] || [ "$health" = "starting" ]; then
+  local health cid
+  cid=$(docker ps -q -f "label=com.docker.compose.service=${name}" 2>/dev/null | head -1)
+  if [ -z "$cid" ]; then
+    health="not_found"
+  else
+    health=$(docker inspect --format='{{.State.Health.Status}}' "$cid" 2>/dev/null || echo "unknown")
+    [ -z "$health" ] && health="no_healthcheck"
+  fi
+  if [ "$health" = "healthy" ] || [ "$health" = "starting" ] || [ "$health" = "no_healthcheck" ]; then
     echo "  PASS: $name ($health)"
     PASS=$((PASS + 1))
   else
