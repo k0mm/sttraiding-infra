@@ -1,0 +1,63 @@
+name: CI — Validate & Test
+
+on:
+  push:
+    branches: [develop, 'feature/**', 'fix/**', 'infra/**']
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  validate:
+    name: Validate configs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          pip install yamllint
+          wget -qO hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+          chmod +x hadolint && sudo mv hadolint /usr/local/bin/
+          curl -sSfL https://get.docker.com | sh
+
+      - name: YAML Lint
+        run: yamllint -d '{extends: default, rules: {line-length: {max: 120}}}' .
+
+      - name: Dockerfile Lint
+        run: find . -name "Dockerfile*" -exec hadolint {} \;
+
+      - name: Docker Compose Validate
+        run: |
+          find . -name "docker-compose*.yml" | while read f; do
+            echo "Validating: $f"
+            docker compose -f "$f" config -q
+          done
+
+      - name: Shell scripts lint
+        run: |
+          sudo apt-get install -y shellcheck
+          find scripts/ -name "*.sh" -exec shellcheck {} \;
+
+  security-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bats
+        run: |
+          git clone https://github.com/bats-core/bats-core.git /tmp/bats
+          sudo /tmp/bats/install.sh /usr/local
+      - name: Run unit tests
+        run: bats tests/unit/

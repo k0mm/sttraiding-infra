@@ -1,0 +1,136 @@
+name: Deploy — Production
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  pre-deploy-checks:
+    name: Pre-deploy validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate all compose files
+        run: |
+          curl -fsSL https://get.docker.com | sh
+          find infrastructure/ -name "docker-compose.yml" | while read f; do
+            docker compose -f "$f" config -q && echo "OK: $f"
+          done
+
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    needs: pre-deploy-checks
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy infrastructure
+        env:
+          SERVER: ${{ secrets.DEPLOY_USER }}@${{ secrets.SERVER_HOST }}
+          SSH_OPTS: -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no
+        run: |
+          # Sync repository
+          rsync -az --delete \
+            -e "ssh $SSH_OPTS" \
+            --exclude '.git' \
+            --exclude '.env' \
+            ./ "$SERVER:/opt/sttraiding/"
+
+          # Write secrets to .env files on server
+          ssh $SSH_OPTS "$SERVER" bash << 'ENVSSH'
+            set -euo pipefail
+            cd /opt/sttraiding
+
+            # Traefik
+            cat > infrastructure/traefik/.env << EOF
+          LETSENCRYPT_EMAIL=${{ secrets.LETSENCRYPT_EMAIL }}
+          DOMAIN=${{ secrets.DOMAIN }}
+          EOF
+
+            # Authelia
+            cat > infrastructure/authelia/.env << EOF
+          JWT_SECRET=${{ secrets.AUTHELIA_JWT_SECRET }}
+          SESSION_SECRET=${{ secrets.AUTHELIA_SESSION_SECRET }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          DOMAIN=${{ secrets.DOMAIN }}
+          EOF
+
+            # Xray
+            echo '${{ secrets.XRAY_CONFIG_B64 }}' | base64 -d \
+              > infrastructure/xray/config.json
+
+            # Backup
+            cat > infrastructure/backup/.env << EOF
+          RESTIC_PASSWORD=${{ secrets.RESTIC_PASSWORD }}
+          YANDEX_USER=${{ secrets.YANDEX_WEBDAV_USER }}
+          YANDEX_PASS=${{ secrets.YANDEX_WEBDAV_PASS }}
+          TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID=${{ secrets.TELEGRAM_CHAT_ID }}
+          EOF
+          ENVSSH
+
+          # Rolling deploy (infrastructure first, then services)
+          ssh $SSH_OPTS "$SERVER" bash << 'DEPLOYSSH'
+            set -euo pipefail
+            cd /opt/sttraiding
+
+            deploy_service() {
+              local svc=$1
+              echo "Deploying: $svc"
+              docker compose -f "infrastructure/${svc}/docker-compose.yml" \
+                pull --quiet
+              docker compose -f "infrastructure/${svc}/docker-compose.yml" \
+                up -d --remove-orphans
+            }
+
+            # Сохранить предыдущий deploy tag для rollback
+            git rev-parse HEAD > .last-deploy-prev 2>/dev/null || true
+            git rev-parse HEAD > .last-deploy
+
+            # Deploy в порядке зависимостей
+            deploy_service traefik
+            sleep 5
+            deploy_service authelia
+            sleep 5
+            deploy_service xray
+            deploy_service syncthing
+            deploy_service hermes
+            deploy_service netdata
+            deploy_service backup
+          DEPLOYSSH
+
+      - name: Run smoke tests
+        env:
+          SERVER: ${{ secrets.DEPLOY_USER }}@${{ secrets.SERVER_HOST }}
+          SSH_OPTS: -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no
+        run: |
+          ssh $SSH_OPTS "$SERVER" bash /opt/sttraiding/tests/smoke/smoke_prod.sh
+
+      - name: Notify on success
+        if: success()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="✅ Deploy SUCCESS: $(git log -1 --pretty='%h %s')"
+
+      - name: Notify and rollback on failure
+        if: failure()
+        env:
+          SERVER: ${{ secrets.DEPLOY_USER }}@${{ secrets.SERVER_HOST }}
+          SSH_OPTS: -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="❌ Deploy FAILED. Smoke tests не прошли. Требуется ручное вмешательство."
