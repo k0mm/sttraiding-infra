@@ -32,7 +32,7 @@ jobs:
         run: |
           if [ -z "${{ secrets.SERVER_HOST }}" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::SERVER_HOST secret not set — skipping deploy"
+            echo "::warning::SERVER_HOST secret not set - skipping deploy"
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
