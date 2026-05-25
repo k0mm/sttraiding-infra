@@ -2,6 +2,7 @@ services:
   docker-api-proxy:
     image: nginx:alpine
     restart: unless-stopped
+    user: "0:0"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./nginx-docker-proxy.conf:/etc/nginx/conf.d/docker.conf:ro
