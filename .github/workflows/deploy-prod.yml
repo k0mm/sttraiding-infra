@@ -123,7 +123,8 @@ jobs:
               > infrastructure/hermes/.env
 
             # Write DeepSeek as default model to hermes-data volume
-            HERMES_VOL=$(docker volume inspect hermes-data --format '{{.Mountpoint}}' 2>/dev/null || echo "")
+            HERMES_VOL=$(docker volume inspect hermes-data 2>/dev/null \
+              | grep '"Mountpoint"' | awk -F'"' '{print $4}' || echo "")
             if [ -n "$HERMES_VOL" ]; then
               mkdir -p "$HERMES_VOL"
               cat > "$HERMES_VOL/config.yaml" << 'HERMESCONF'
@@ -188,13 +189,17 @@ HERMESCONF
           ssh $SSH_OPTS "$SERVER" bash << 'DBGSSH'
             echo "=== hermes containers ==="
             docker ps -a --filter label=com.docker.compose.service=hermes
+            HERMES_ID=$(docker ps -q --filter label=com.docker.compose.service=hermes | head -1)
             echo "=== hermes networks ==="
-            docker inspect $(docker ps -q --filter label=com.docker.compose.service=hermes | head -1) \
-              --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}: {{$v.IPAddress}}{{"\n"}}{{end}}' 2>/dev/null || echo "container not found"
+            [ -n "$HERMES_ID" ] && docker inspect "$HERMES_ID" \
+              | python3 -c 'import sys,json; d=json.load(sys.stdin)[0]; [print(k, v["IPAddress"]) for k,v in d["NetworkSettings"]["Networks"].items()]' \
+              || echo "container not found"
             echo "=== traefik-public members ==="
-            docker network inspect traefik-public --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null || echo "network not found"
+            docker network inspect traefik-public \
+              | python3 -c 'import sys,json; d=json.load(sys.stdin)[0]; [print(v["Name"]) for v in d["Containers"].values()]' \
+              2>/dev/null || echo "network not found"
             echo "=== hermes logs (last 20) ==="
-            docker logs $(docker ps -q --filter label=com.docker.compose.service=hermes | head -1) --tail=20 2>&1 || true
+            [ -n "$HERMES_ID" ] && docker logs "$HERMES_ID" --tail=20 2>&1 || echo "no container"
           DBGSSH
 
       - name: Run smoke tests
