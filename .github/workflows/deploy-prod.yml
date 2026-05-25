@@ -61,6 +61,11 @@ jobs:
             -e "ssh $SSH_OPTS" \
             --exclude '.git' \
             --exclude '.env' \
+            --exclude 'users_database.yml' \
+            --exclude 'rclone.conf' \
+            --exclude 'config.json' \
+            --exclude 'acme.json' \
+            --exclude 'data/' \
             ./ "$SERVER:/opt/sttraiding/"
 
           LETSENCRYPT_EMAIL='${{ secrets.LETSENCRYPT_EMAIL }}'
