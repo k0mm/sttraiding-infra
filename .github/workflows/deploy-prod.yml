@@ -116,9 +116,33 @@ jobs:
             echo "DOMAIN=$DOMAIN" > infrastructure/syncthing/.env
 
             { echo "DOMAIN=$DOMAIN"; echo "OPENROUTER_API_KEY=$OPENROUTER_KEY"; \
+              echo "DEEPSEEK_API_KEY=$DEEPSEEK_KEY"; \
               echo "TELEGRAM_BOT_TOKEN=$TG_TOKEN"; \
-              echo "TELEGRAM_ALLOWED_USERS=$TG_CHAT"; } \
+              echo "TELEGRAM_ALLOWED_USERS=$TG_CHAT"; \
+              echo "TELEGRAM_HOME_CHANNEL=$TG_CHAT"; } \
               > infrastructure/hermes/.env
+
+            # Write DeepSeek as default model to hermes-data volume
+            HERMES_VOL=$(docker volume inspect hermes-data --format '{{.Mountpoint}}' 2>/dev/null || echo "")
+            if [ -n "$HERMES_VOL" ]; then
+              mkdir -p "$HERMES_VOL"
+              cat > "$HERMES_VOL/config.yaml" << 'HERMESCONF'
+model:
+  default: deepseek-chat
+  provider: deepseek
+  base_url: https://api.deepseek.com
+  model: deepseek-chat
+providers: {}
+fallback_providers: []
+toolsets:
+- hermes-cli
+agent:
+  max_turns: 60
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+HERMESCONF
+            fi
 
             echo "DOMAIN=$DOMAIN" > infrastructure/netdata/.env
 
@@ -155,6 +179,23 @@ jobs:
             deploy_service netdata
             deploy_service backup
           DEPLOYSSH
+
+      - name: Debug hermes
+        env:
+          SERVER: ${{ secrets.DEPLOY_USER }}@${{ secrets.SERVER_HOST }}
+          SSH_OPTS: -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no
+        run: |
+          ssh $SSH_OPTS "$SERVER" bash << 'DBGSSH'
+            echo "=== hermes containers ==="
+            docker ps -a --filter label=com.docker.compose.service=hermes
+            echo "=== hermes networks ==="
+            docker inspect $(docker ps -q --filter label=com.docker.compose.service=hermes | head -1) \
+              --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}: {{$v.IPAddress}}{{"\n"}}{{end}}' 2>/dev/null || echo "container not found"
+            echo "=== traefik-public members ==="
+            docker network inspect traefik-public --format '{{range .Containers}}{{.Name}} {{end}}' 2>/dev/null || echo "network not found"
+            echo "=== hermes logs (last 20) ==="
+            docker logs $(docker ps -q --filter label=com.docker.compose.service=hermes | head -1) --tail=20 2>&1 || true
+          DBGSSH
 
       - name: Run smoke tests
         env:
