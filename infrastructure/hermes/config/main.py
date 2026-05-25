@@ -20,7 +20,9 @@ def _client() -> httpx.AsyncClient:
 
 
 def _route(model: str) -> tuple[str, str]:
-    if model.startswith("deepseek"):
+    # deepseek-chat / deepseek-reasoner → DeepSeek API directly
+    # anything with "/" (deepseek/..., google/..., etc.) → OpenRouter
+    if "/" not in model and model.startswith("deepseek"):
         if not DEEPSEEK_API_KEY:
             raise HTTPException(503, detail="DeepSeek API key not configured")
         return DEEPSEEK_BASE, DEEPSEEK_API_KEY
@@ -94,7 +96,12 @@ async def chat_completions(request: Request):
             headers=headers, json=body,
         )
         resp.raise_for_status()
-        return resp.json()
+        from fastapi.responses import Response
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type="application/json",
+        )
 
 
 if __name__ == "__main__":
