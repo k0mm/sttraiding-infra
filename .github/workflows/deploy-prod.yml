@@ -186,15 +186,18 @@ jobs:
             echo "=== hermes container ==="
             docker ps -a --filter label=com.docker.compose.service=hermes || true
             HERMES_ID=$(docker ps -q --filter label=com.docker.compose.service=hermes 2>/dev/null | head -1 || true)
-            echo "=== hermes inspect ==="
+            echo "=== hermes traefik labels ==="
             if [ -n "$HERMES_ID" ]; then
-              docker inspect "$HERMES_ID" 2>/dev/null | grep -E '"IPAddress"|"Networks"|"Name"' | head -20 || true
+              docker inspect "$HERMES_ID" 2>/dev/null | grep -i 'traefik' | head -20 || true
             fi
             echo "=== traefik-public members ==="
             docker network inspect traefik-public 2>/dev/null | grep '"Name"' | head -20 || true
-            echo "=== hermes logs (last 20) ==="
+            echo "=== traefik routers (hermes) ==="
+            docker exec traefik-traefik-1 traefik healthcheck --ping 2>/dev/null || true
+            docker logs traefik-traefik-1 --tail=5 2>&1 | grep -i hermes || true
+            echo "=== hermes logs (last 15) ==="
             if [ -n "$HERMES_ID" ]; then
-              docker logs "$HERMES_ID" --tail=20 2>&1 || true
+              docker logs "$HERMES_ID" --tail=15 2>&1 || true
             fi
           DBGSSH
 
