@@ -127,22 +127,17 @@ jobs:
               | grep '"Mountpoint"' | awk -F'"' '{print $4}' || echo "")
             if [ -n "$HERMES_VOL" ]; then
               mkdir -p "$HERMES_VOL"
-              cat > "$HERMES_VOL/config.yaml" << 'HERMESCONF'
-model:
-  default: deepseek-chat
-  provider: deepseek
-  base_url: https://api.deepseek.com
-  model: deepseek-chat
-providers: {}
-fallback_providers: []
-toolsets:
-- hermes-cli
-agent:
-  max_turns: 60
-  gateway_timeout: 1800
-  restart_drain_timeout: 180
-  api_max_retries: 3
-HERMESCONF
+              { echo 'model:'; echo '  default: deepseek-chat'; \
+                echo '  provider: deepseek'; \
+                echo '  base_url: https://api.deepseek.com'; \
+                echo '  model: deepseek-chat'; \
+                echo 'providers: {}'; echo 'fallback_providers: []'; \
+                echo 'toolsets:'; echo '- hermes-cli'; \
+                echo 'agent:'; echo '  max_turns: 60'; \
+                echo '  gateway_timeout: 1800'; \
+                echo '  restart_drain_timeout: 180'; \
+                echo '  api_max_retries: 3'; } \
+                > "$HERMES_VOL/config.yaml"
             fi
 
             echo "DOMAIN=$DOMAIN" > infrastructure/netdata/.env
