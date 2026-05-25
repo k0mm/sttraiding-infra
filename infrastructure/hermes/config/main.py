@@ -8,14 +8,15 @@ app = FastAPI(title="Hermes")
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 DOMAIN = os.getenv("DOMAIN", "sttraiding.ru")
-PROXY = os.getenv("HTTPS_PROXY") or os.getenv("HTTP_PROXY")
-
 DEEPSEEK_BASE = "https://api.deepseek.com/v1"
 OPENROUTER_BASE = "https://openrouter.ai/api/v1"
 
 
 def _client() -> httpx.AsyncClient:
-    return httpx.AsyncClient(proxy=PROXY, timeout=120)
+    # Use trust_env=False so system HTTPS_PROXY is ignored for LLM API calls.
+    # DeepSeek and OpenRouter are reachable directly; the xray SOCKS5 proxy
+    # breaks TLS for these hosts.
+    return httpx.AsyncClient(trust_env=False, timeout=120)
 
 
 def _route(model: str) -> tuple[str, str]:
