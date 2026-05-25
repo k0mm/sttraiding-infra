@@ -122,23 +122,23 @@ jobs:
               echo "TELEGRAM_HOME_CHANNEL=$TG_CHAT"; } \
               > infrastructure/hermes/.env
 
-            # Write DeepSeek as default model to hermes-data volume
-            HERMES_VOL=$(docker volume inspect hermes-data 2>/dev/null \
-              | grep '"Mountpoint"' | awk -F'"' '{print $4}' || echo "")
-            if [ -n "$HERMES_VOL" ]; then
-              mkdir -p "$HERMES_VOL"
-              { echo 'model:'; echo '  default: deepseek-chat'; \
-                echo '  provider: deepseek'; \
-                echo '  base_url: https://api.deepseek.com'; \
-                echo '  model: deepseek-chat'; \
-                echo 'providers: {}'; echo 'fallback_providers: []'; \
-                echo 'toolsets:'; echo '- hermes-cli'; \
-                echo 'agent:'; echo '  max_turns: 60'; \
-                echo '  gateway_timeout: 1800'; \
-                echo '  restart_drain_timeout: 180'; \
-                echo '  api_max_retries: 3'; } \
-                > "$HERMES_VOL/config.yaml"
-            fi
+            # Write DeepSeek as default model to hermes-data volume via docker
+            docker volume create hermes-data 2>/dev/null || true
+            docker run --rm -v hermes-data:/opt/data busybox sh -c \
+              'echo "model:" > /opt/data/config.yaml && \
+               echo "  default: deepseek-chat" >> /opt/data/config.yaml && \
+               echo "  provider: deepseek" >> /opt/data/config.yaml && \
+               echo "  base_url: https://api.deepseek.com" >> /opt/data/config.yaml && \
+               echo "  model: deepseek-chat" >> /opt/data/config.yaml && \
+               echo "providers: {}" >> /opt/data/config.yaml && \
+               echo "fallback_providers: []" >> /opt/data/config.yaml && \
+               echo "toolsets:" >> /opt/data/config.yaml && \
+               echo "- hermes-cli" >> /opt/data/config.yaml && \
+               echo "agent:" >> /opt/data/config.yaml && \
+               echo "  max_turns: 60" >> /opt/data/config.yaml && \
+               echo "  gateway_timeout: 1800" >> /opt/data/config.yaml && \
+               echo "  restart_drain_timeout: 180" >> /opt/data/config.yaml && \
+               echo "  api_max_retries: 3" >> /opt/data/config.yaml'
 
             echo "DOMAIN=$DOMAIN" > infrastructure/netdata/.env
 
