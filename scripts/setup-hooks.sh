@@ -31,7 +31,7 @@ fi
 # 4. Валидация docker-compose файлов
 staged_compose=$(git diff --cached --name-only | grep 'docker-compose' || true)
 if [ -n "$staged_compose" ]; then
-  echo "$staged_compose" | while read f; do
+  echo "$staged_compose" | while read -r f; do
     docker compose -f "$f" config -q && echo "✓ Valid: $f"
   done
 fi

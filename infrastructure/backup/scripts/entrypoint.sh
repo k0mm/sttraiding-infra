@@ -6,28 +6,28 @@ log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 log "Backup service starting"
 
 # Init restic repo if not exists
-if ! restic --no-lock snapshots &>/dev/null 2>&1; then
+if ! restic --no-lock snapshots > /dev/null 2>&1; then
   log "Initialising restic repository"
   restic init
 fi
 
-# Run initial backup, then schedule via cron loop
-/backup/scripts/backup.sh
+# Run initial backup immediately on start
+/backup/scripts/backup.sh full
 
-# Simple cron loop — no crond dependency
+# Schedule: obsidian every 6h, full every 24h
+NEXT_OBSIDIAN=$(( $(date +%s) + 6*3600 ))
+NEXT_FULL=$(( $(date +%s) + 24*3600 ))
+
 while true; do
-  # Obsidian vault: every 6 hours
-  NEXT_OBSIDIAN=$(( $(date +%s) + 6*3600 ))
-  # Full backup: every 24 hours
-  NEXT_FULL=$(( $(date +%s) + 24*3600 ))
-
-  sleep 3600  # check every hour
+  sleep 3600
 
   now=$(date +%s)
+
   if [ "$now" -ge "$NEXT_OBSIDIAN" ]; then
     /backup/scripts/backup.sh obsidian || log "WARN: obsidian backup failed"
     NEXT_OBSIDIAN=$(( now + 6*3600 ))
   fi
+
   if [ "$now" -ge "$NEXT_FULL" ]; then
     /backup/scripts/backup.sh full || log "WARN: full backup failed"
     NEXT_FULL=$(( now + 24*3600 ))

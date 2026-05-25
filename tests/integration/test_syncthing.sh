@@ -30,9 +30,10 @@ test_syncthing_container_healthy() {
 }
 
 test_obsidian_volume_exists() {
+  local exit_code
   docker volume inspect obsidian-vault > /dev/null 2>&1
-  local exit=$?
-  if [ "$exit" -eq 0 ]; then
+  exit_code=$?
+  if [ "$exit_code" -eq 0 ]; then
     echo "  PASS: obsidian-vault volume exists"
     PASS=$((PASS + 1))
   else
