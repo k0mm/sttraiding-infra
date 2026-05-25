@@ -1,8 +1,8 @@
-name: CI — Validate & Test
+name: CI
 
 on:
   push:
-    branches: [develop, 'feature/**', 'fix/**', 'infra/**']
+    branches: [main, develop, 'feature/**', 'fix/**', 'infra/**']
   pull_request:
     branches: [main, develop]
 
@@ -16,19 +16,20 @@ jobs:
       - name: Install tools
         run: |
           pip install yamllint
-          wget -qO hadolint https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
+          wget -qO hadolint \
+            https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64
           chmod +x hadolint && sudo mv hadolint /usr/local/bin/
-          curl -sSfL https://get.docker.com | sh
+          curl -fsSL https://get.docker.com | sh
 
       - name: YAML Lint
-        run: yamllint -d '{extends: default, rules: {line-length: {max: 120}}}' .
+        run: yamllint .
 
       - name: Dockerfile Lint
-        run: find . -name "Dockerfile*" -exec hadolint {} \;
+        run: find . -name "Dockerfile*" -not -path './.git/*' -exec hadolint {} \;
 
       - name: Docker Compose Validate
         run: |
-          find . -name "docker-compose*.yml" | while read f; do
+          find . -name "docker-compose*.yml" -not -path './.git/*' | while read -r f; do
             echo "Validating: $f"
             docker compose -f "$f" config -q
           done
@@ -36,18 +37,21 @@ jobs:
       - name: Shell scripts lint
         run: |
           sudo apt-get install -y shellcheck
-          find scripts/ -name "*.sh" -exec shellcheck {} \;
+          find scripts/ tests/ -name "*.sh" -exec shellcheck {} \;
 
   security-scan:
     name: Secret scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Scan for secrets
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
           base: ${{ github.event.repository.default_branch }}
+          head: HEAD
 
   test-unit:
     name: Unit Tests
@@ -60,4 +64,9 @@ jobs:
           git clone https://github.com/bats-core/bats-core.git /tmp/bats
           sudo /tmp/bats/install.sh /usr/local
       - name: Run unit tests
-        run: bats tests/unit/
+        run: |
+          if ls tests/unit/*.bats &>/dev/null; then
+            bats tests/unit/
+          else
+            echo "No unit tests yet — skipping"
+          fi
