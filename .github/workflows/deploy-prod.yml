@@ -69,6 +69,7 @@ jobs:
             ./ "$SERVER:/opt/sttraiding/"
 
           LETSENCRYPT_EMAIL='${{ secrets.LETSENCRYPT_EMAIL }}'
+          CF_TOKEN='${{ secrets.CF_DNS_API_TOKEN }}'
           DOMAIN='${{ secrets.DOMAIN }}'
           AUTHELIA_JWT='${{ secrets.AUTHELIA_JWT_SECRET }}'
           AUTHELIA_SESSION='${{ secrets.AUTHELIA_SESSION_SECRET }}'
@@ -84,6 +85,7 @@ jobs:
 
           ssh $SSH_OPTS "$SERVER" \
             LETSENCRYPT_EMAIL="$LETSENCRYPT_EMAIL" \
+            CF_TOKEN="$CF_TOKEN" \
             DOMAIN="$DOMAIN" \
             AUTHELIA_JWT="$AUTHELIA_JWT" \
             AUTHELIA_SESSION="$AUTHELIA_SESSION" \
@@ -100,7 +102,8 @@ jobs:
             set -euo pipefail
             cd /opt/sttraiding
 
-            { echo "LETSENCRYPT_EMAIL=$LETSENCRYPT_EMAIL"; echo "DOMAIN=$DOMAIN"; } \
+            { echo "LETSENCRYPT_EMAIL=$LETSENCRYPT_EMAIL"; echo "DOMAIN=$DOMAIN"; \
+              echo "CF_DNS_API_TOKEN=$CF_TOKEN"; } \
               > infrastructure/traefik/.env
 
             { echo "JWT_SECRET=$AUTHELIA_JWT"; echo "SESSION_SECRET=$AUTHELIA_SESSION"; \

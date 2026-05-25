@@ -40,5 +40,8 @@ certificatesResolvers:
     acme:
       email: "${LETSENCRYPT_EMAIL}"
       storage: /etc/traefik/acme/acme.json
-      httpChallenge:
-        entryPoint: web
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
