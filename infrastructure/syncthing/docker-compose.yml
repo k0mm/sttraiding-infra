@@ -1,0 +1,43 @@
+services:
+  syncthing:
+    image: syncthing/syncthing:1.27.12
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      - TZ=Europe/Moscow
+    volumes:
+      - syncthing-config:/var/syncthing/config
+      - obsidian-vault:/vault
+    networks:
+      - traefik-public
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8384/rest/system/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.syncthing.rule=Host(`syncthing.${DOMAIN:-sttraiding.ru}`)"
+      - "traefik.http.routers.syncthing.entrypoints=websecure"
+      - "traefik.http.routers.syncthing.tls=true"
+      - "traefik.http.routers.syncthing.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.syncthing.middlewares=authelia@file,secure-headers@file"
+      - "traefik.http.services.syncthing.loadbalancer.server.port=8384"
+
+volumes:
+  syncthing-config:
+    name: syncthing-config
+  obsidian-vault:
+    name: obsidian-vault
+
+networks:
+  traefik-public:
+    external: true
+  internal:
+    external: true
