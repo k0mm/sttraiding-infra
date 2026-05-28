@@ -2,7 +2,7 @@ http:
   middlewares:
     authelia:
       forwardAuth:
-        address: "http://authelia:9091/api/authz/forward-auth"
+        address: "http://authelia:9091/api/authz/forward-auth?authelia_url=https://auth.sttraiding.ru"
         trustForwardHeader: true
         authResponseHeaders:
           - Remote-User
