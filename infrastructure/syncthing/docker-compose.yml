@@ -10,6 +10,15 @@ services:
     volumes:
       - syncthing-config:/var/syncthing/config
       - obsidian-vault:/vault
+      - ./config.xml.template:/tmp/config.xml.template:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ ! -f /var/syncthing/config/config.xml ]; then
+          echo "First start: applying config template..."
+          cp /tmp/config.xml.template /var/syncthing/config/config.xml
+        fi
+        exec /bin/syncthing serve --home=/var/syncthing/config --no-browser
     networks:
       - traefik-public
       - internal

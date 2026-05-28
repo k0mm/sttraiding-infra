@@ -14,6 +14,7 @@ services:
       - API_SERVER_HOST=0.0.0.0
     volumes:
       - hermes-data:/opt/data
+      - obsidian-vault:/vault
     networks:
       - traefik-public
       - internal
@@ -45,6 +46,9 @@ services:
 volumes:
   hermes-data:
     name: hermes-data
+  obsidian-vault:
+    external: true
+    name: obsidian-vault
 
 networks:
   traefik-public:
