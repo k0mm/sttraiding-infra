@@ -1,0 +1,56 @@
+{
+  "log": { "loglevel": "warning" },
+  "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": 1080,
+      "protocol": "socks",
+      "settings": { "auth": "noauth", "udp": true },
+      "tag": "socks-in"
+    },
+    {
+      "listen": "0.0.0.0",
+      "port": 8080,
+      "protocol": "http",
+      "tag": "http-in"
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "vless",
+      "settings": {
+        "vnext": [{
+          "address": "89.110.110.108",
+          "port": 443,
+          "users": [{
+            "id": "d3b1b839-f74a-47db-9e89-f4e4393b008d",
+            "encryption": "mlkem768x25519plus.native.0rtt.E-K6TCDSzNHkRY1XDE_oUxom6YbDs1ZEfN4pw47H_wA",
+            "flow": "xtls-rprx-vision"
+          }]
+        }]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "fingerprint": "firefox",
+          "serverName": "gateway.icloud.com",
+          "publicKey": "S_T04V5I1Vnqi7ta-mmx6PRAfody_LSdvmfzuT78Ik0",
+          "shortId": "f311bd0bf50170",
+          "spiderX": "/xyfPunzNNbxlAZ4"
+        }
+      },
+      "tag": "proxy"
+    },
+    { "protocol": "freedom", "tag": "direct" }
+  ],
+  "routing": {
+    "rules": [
+      {
+        "type": "field",
+        "domain": ["geosite:telegram"],
+        "outboundTag": "proxy"
+      }
+    ]
+  }
+}

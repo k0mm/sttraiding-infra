@@ -3,7 +3,6 @@
 **/*.key
 **/*.pem
 **/*.p12
-**/config.json
 **/users_database.yml
 **/secrets/
 **/acme.json
