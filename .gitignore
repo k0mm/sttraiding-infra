@@ -11,6 +11,9 @@
 **/data/
 **/.last-deploy
 
+# Vault (personal notes, synced via Syncthing — not for version control)
+Vault/
+
 # Trash
 **/__pycache__/
 **/node_modules/
