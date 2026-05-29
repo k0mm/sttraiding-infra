@@ -15,6 +15,7 @@ services:
       - TZ=Europe/Moscow
     volumes:
       - ./configuration.yml:/config/configuration.yml:ro
+      - ./users_database.yml:/config/users_database.yml:ro
       - authelia-data:/config
     networks:
       - traefik-public
