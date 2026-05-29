@@ -36,7 +36,7 @@ access_control:
         - "netdata.sttraiding.ru"
         - "hermes.sttraiding.ru"
         - "backup.sttraiding.ru"
-      policy: two_factor
+      policy: one_factor
 
 session:
   name: authelia_session
