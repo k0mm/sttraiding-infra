@@ -12,14 +12,17 @@ services:
       - HERMES_DASHBOARD_HOST=0.0.0.0
       - API_SERVER_ENABLED=true
       - API_SERVER_HOST=0.0.0.0
+    privileged: true
+    pid: host
     volumes:
       - hermes-data:/opt/data
       - obsidian-vault:/vault
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /:/host
+      - /etc/localtime:/etc/localtime:ro
     networks:
       - traefik-public
       - internal
-    security_opt:
-      - no-new-privileges:true
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:9119/"]
       interval: 30s
