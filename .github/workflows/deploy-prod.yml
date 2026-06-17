@@ -177,11 +177,6 @@ jobs:
 
             git rev-parse HEAD > .last-deploy 2>/dev/null || true
 
-            # Reset acme.json so Traefik immediately requests new certs via reg.ru
-            docker compose -f infrastructure/traefik/docker-compose.yml down 2>/dev/null || true
-            docker volume rm traefik-certs 2>/dev/null || true
-            docker volume create traefik-certs
-
             deploy_service traefik
             sleep 5
             deploy_service authelia
