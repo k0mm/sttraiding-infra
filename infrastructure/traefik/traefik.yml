@@ -51,7 +51,9 @@ certificatesResolvers:
       storage: /etc/traefik/acme/acme.json
       dnsChallenge:
         provider: regru
-        delayBeforeCheck: 120
+        propagation:
+          delayBeforeChecks: 120s
+          disableChecks: false
         resolvers:
           - "8.8.8.8:53"
           - "8.8.4.4:53"

@@ -26,6 +26,9 @@ services:
       - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN:-}
       - REGRU_USERNAME=${REGRU_USERNAME:-}
       - REGRU_PASSWORD=${REGRU_PASSWORD:-}
+      - REGRU_PROPAGATION_TIMEOUT=600
+      - REGRU_POLLING_INTERVAL=30
+      - REGRU_TTL=60
     ports:
       - "80:80"
       - "443:443"
