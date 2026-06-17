@@ -69,6 +69,7 @@ jobs:
             ./ "$SERVER:/opt/sttraiding/"
 
           LETSENCRYPT_EMAIL='${{ secrets.LETSENCRYPT_EMAIL }}'
+          CF_TOKEN='${{ secrets.CF_DNS_API_TOKEN }}'
           REGRU_USER='${{ secrets.REGRU_USERNAME }}'
           REGRU_PASS='${{ secrets.REGRU_PASSWORD }}'
           DOMAIN='${{ secrets.DOMAIN }}'
@@ -89,6 +90,7 @@ jobs:
           ssh $SSH_OPTS "$SERVER" \
             AUTHELIA_USERS_DB_B64="$AUTHELIA_USERS_DB_B64" \
             LETSENCRYPT_EMAIL="$LETSENCRYPT_EMAIL" \
+            CF_TOKEN="$CF_TOKEN" \
             REGRU_USER="$REGRU_USER" \
             REGRU_PASS="$REGRU_PASS" \
             DOMAIN="$DOMAIN" \
@@ -109,6 +111,7 @@ jobs:
             cd /opt/sttraiding
 
             { echo "LETSENCRYPT_EMAIL=$LETSENCRYPT_EMAIL"; echo "DOMAIN=$DOMAIN"; \
+              echo "CF_DNS_API_TOKEN=$CF_TOKEN"; \
               echo "REGRU_USERNAME=$REGRU_USER"; echo "REGRU_PASSWORD=$REGRU_PASS"; } \
               > infrastructure/traefik/.env
 

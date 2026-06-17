@@ -36,6 +36,16 @@ providers:
     watch: true
 
 certificatesResolvers:
+  # For sttraiding.ru — DNS managed by Cloudflare
+  cloudflare:
+    acme:
+      storage: /etc/traefik/acme/acme.json
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - "1.1.1.1:53"
+          - "8.8.8.8:53"
+  # For snt-electron.ru — DNS managed by reg.ru
   letsencrypt:
     acme:
       storage: /etc/traefik/acme/acme.json
