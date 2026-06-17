@@ -23,7 +23,8 @@ services:
     environment:
       - LETSENCRYPT_EMAIL=${LETSENCRYPT_EMAIL:-}
       - DOMAIN=${DOMAIN:-sttraiding.ru}
-      - CF_DNS_API_TOKEN=${CF_DNS_API_TOKEN:-}
+      - REGRU_USERNAME=${REGRU_USERNAME:-}
+      - REGRU_PASSWORD=${REGRU_PASSWORD:-}
     ports:
       - "80:80"
       - "443:443"
