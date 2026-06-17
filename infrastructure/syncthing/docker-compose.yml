@@ -35,7 +35,7 @@ services:
       - "traefik.http.routers.syncthing.rule=Host(`syncthing.${DOMAIN:-sttraiding.ru}`)"
       - "traefik.http.routers.syncthing.entrypoints=websecure"
       - "traefik.http.routers.syncthing.tls=true"
-      - "traefik.http.routers.syncthing.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.syncthing.tls.certresolver=cloudflare"
       - "traefik.http.routers.syncthing.middlewares=authelia@file,secure-headers@file"
       - "traefik.http.services.syncthing.loadbalancer.server.port=8384"
 

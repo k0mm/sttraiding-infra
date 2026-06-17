@@ -34,7 +34,7 @@ services:
       - "traefik.http.routers.netdata.rule=Host(`netdata.${DOMAIN:-sttraiding.ru}`)"
       - "traefik.http.routers.netdata.entrypoints=websecure"
       - "traefik.http.routers.netdata.tls=true"
-      - "traefik.http.routers.netdata.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.netdata.tls.certresolver=cloudflare"
       - "traefik.http.routers.netdata.middlewares=authelia@file,secure-headers@file"
       - "traefik.http.services.netdata.loadbalancer.server.port=19999"
 

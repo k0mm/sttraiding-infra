@@ -36,7 +36,7 @@ services:
       - "traefik.http.routers.authelia.rule=Host(`auth.${DOMAIN:-sttraiding.ru}`)"
       - "traefik.http.routers.authelia.entrypoints=websecure"
       - "traefik.http.routers.authelia.tls=true"
-      - "traefik.http.routers.authelia.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.authelia.tls.certresolver=cloudflare"
       - "traefik.http.services.authelia.loadbalancer.server.port=9091"
 
   redis:
